@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using JohaToolkit.UnityEngine.CheatConsole;
 using JohaToolkit.UnityEngine.DataStructures.Lists.CircularLinkedList;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -40,7 +41,7 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
         [SerializeField] private int maxLogs;
 
         [Header("Assembly Names: Optional. standard is \"Assembly-CSharp\"")]
-        [SerializeField] private string[] assemblyNames = new []{"Assembly-CSharp"};
+        [SerializeField] private string[] assemblyNames = {"Assembly-CSharp"};
 
         [Header("Not recommended! Can cause performance issues")]
         [SerializeField] private bool searchAllAssemblies = false;
@@ -82,12 +83,11 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
                 Destroy(gameObject);
                 return;
             }
-            else
-            {
-                DontDestroyOnLoad(this);
-                Instance = this;
-            }
-            
+
+            DontDestroyOnLoad(this);
+            Instance = this;
+
+            CheatCommandExecutor.CheatCommands.Add("help", new HelpCommand("help", "Print All possible Commands"));
             CheatCommandExecutor.Init(assemblyNames, searchAllAssemblies);
             
             _logs = new CircularLinkedList<LogMessage>(maxLogs);
@@ -147,13 +147,11 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
             _scrollPositionLogs.y = _logsContentRect.height - _logsRect.height;
         }
 
-        public void AddLog(string message, Color color)
-        {
+        public void AddLog(string message, Color color) =>
             AddLog(new LogMessage() {
                 Message = message,
                 Color = color
             });
-        }
 
         private void ToggleConsole()
         {
