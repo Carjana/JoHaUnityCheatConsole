@@ -156,7 +156,7 @@ namespace JoHaCheatConsole
         {
             _isConsoleShown = !_isConsoleShown;
             string displayName = toggleConsoleInputAction.action.activeControl.displayName;
-            if(_userInput.Length > 0 && _userInput.EndsWith(displayName))
+            if(_userInput.Length > 0 && _userInput.EndsWith(displayName, StringComparison.InvariantCultureIgnoreCase))
             {
                 _userInput = _userInput.Remove(_userInput.Length - displayName.Length, displayName.Length);
             }
