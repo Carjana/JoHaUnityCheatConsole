@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace JoHaToolkit.UnityEngine.CheatConsole
+namespace JoHaCheatConsole
 {
     public static class CheatCommandExecutor
     {
@@ -21,24 +21,39 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
 
         private static void GenerateCheatCommandsList(string[] assembliesToSearch, bool searchAllAssemblies = false)
         {
-            (MethodInfo, CheatCommandAttribute)[] methodInfos = ReflectionHelper.GetMethodInfos(assembliesToSearch, searchAllAssemblies);
-            foreach ((MethodInfo methodInfo, CheatCommandAttribute cheatCommandAttribute) in methodInfos)
+            Assembly[] assemblies = searchAllAssemblies? AppDomain.CurrentDomain.GetAssemblies() : AppDomain.CurrentDomain.GetAssemblies().Where(a => assembliesToSearch.Any(a.FullName.StartsWith)).ToArray();
+
+            foreach (Assembly assembly in assemblies)
             {
-                if (!methodInfo.IsStatic)
+                foreach (Type type in assembly.GetTypes())
                 {
-                    Debug.LogWarning($"CheatMethod {methodInfo.DeclaringType}.{methodInfo.Name} must be static!");
-                    continue;
+                    const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+                    foreach (MethodInfo methodInfo in type.GetMethods(flags))
+                    {
+                        if(!ReflectionHelper.TryGetCheatCommandAttribute(methodInfo, out CheatCommandAttribute attribute))
+                            continue;
+                        
+                        MethodInfoCheatCommand cheatCommand = ReflectionHelper.MethodInfoToCheatCommand(methodInfo, attribute);
+                        if (CheatCommands.TryAdd(cheatCommand.CommandName, cheatCommand))
+                            continue;
+                        
+                        Debug.LogWarning($"{cheatCommand.CommandName} already exists in the cheat commands list! Check the command names! ({cheatCommand.MethodInfo.DeclaringType}.{cheatCommand.MethodInfo.Name})");
+                    }
                 }
-
-                MethodInfoCheatCommand cheatCommand = new(cheatCommandAttribute.CommandName ?? methodInfo.Name,
-                    cheatCommandAttribute.Description, methodInfo);
-
-                if (CheatCommands.TryAdd(cheatCommand.CommandName, cheatCommand)) 
-                    continue;
-                Debug.LogWarning($"{cheatCommand.CommandName} already exists in the cheat commands list! Check the command names! ({cheatCommand.MethodInfo.DeclaringType}.{cheatCommand.MethodInfo.Name})");
-                return;
             }
         }
+
+        public static bool AddCommand(string name, string description, Action action) => AddCommand(new ZeroParameterCheatCommand(name, description, action));
+        
+        public static bool AddCommand(BaseCheatCommand command)
+        {
+            if (CheatCommands.TryAdd(command.CommandName, command)) 
+                return true;
+            Debug.LogWarning($"{command.CommandName} already exists in the cheat commands list! Command names must be unique!");
+            return false;
+        }
+
+        public static bool RemoveCommand(string commandName) => CheatCommands.Remove(commandName);
 
         public static bool IsValidCommand(string command)
         {

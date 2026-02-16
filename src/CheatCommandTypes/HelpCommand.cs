@@ -1,9 +1,8 @@
 using System;
 using System.Text;
-using JoHaToolkit.UnityEngine.CheatConsole;
 using UnityEngine;
 
-namespace JohaToolkit.UnityEngine.CheatConsole
+namespace JoHaCheatConsole
 {
     
 

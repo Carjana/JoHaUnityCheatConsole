@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
-namespace JoHaToolkit.UnityEngine.CheatConsole
+namespace JoHaCheatConsole
 {
     public class MethodInfoCheatCommand : BaseCheatCommand
     {

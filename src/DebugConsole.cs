@@ -1,12 +1,9 @@
 using System;
 using System.Text;
-using JohaToolkit.UnityEngine.CheatConsole;
-using JohaToolkit.UnityEngine.DataStructures.Lists.CircularLinkedList;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 
-namespace JoHaToolkit.UnityEngine.CheatConsole
+namespace JoHaCheatConsole
 {
     public class DebugConsole : MonoBehaviour
     {
@@ -46,6 +43,8 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
         [Header("Not recommended! Can cause performance issues")]
         [SerializeField] private bool searchAllAssemblies = false;
 
+        private readonly string _inputFieldName = "InputField";
+        
         private const int TextInputFieldSpacing = 20;
         private const int TopSpacing = 30;
         private const int TextInputFieldHeight = 30;
@@ -104,8 +103,8 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
 
         private void RecalculateRects()
         {
-            _consoleRect = new Rect(Screen.width/2, Screen.height - GetConsoleRectHeight(), Screen.width/2, GetConsoleRectHeight());
-            _suggestionsAreaRect = new Rect(0,Screen.height - GetSuggestionsHeight(),Screen.width/2,GetSuggestionsHeight());
+            _consoleRect = new Rect((float)Screen.width/2, Screen.height - GetConsoleRectHeight(), (float)Screen.width/2, GetConsoleRectHeight());
+            _suggestionsAreaRect = new Rect(0,Screen.height - GetSuggestionsHeight(),(float)Screen.width/2,GetSuggestionsHeight());
             _inputRect = new Rect(0, Screen.height - TextInputFieldHeight, Screen.width, TextInputFieldHeight);
 
             _logsRect = new Rect(_consoleRect.x, Screen.height - _consoleRect.height + TopSpacing, _consoleRect.width, _consoleRect.height - TopSpacing - TextInputFieldHeight - TextInputFieldSpacing);
@@ -168,8 +167,6 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
             if (!_isConsoleShown)
                 return;
 
-            _possibleCommands = CheatCommandExecutor.GetPossibleCommands(_userInput);
-
             RecalculateRects();
             
             DrawConsoleLogArea();
@@ -186,9 +183,9 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
             bool validCommand = CheatCommandExecutor.IsValidCommand(_userInput);
             using (new ChangeGUIColor(validCommand ? Color.white : Color.red))
             {
-                GUI.SetNextControlName("InputField");
+                GUI.SetNextControlName(_inputFieldName);
                 _userInput = GUI.TextField(_inputRect, _userInput);
-                GUI.FocusControl("InputField");
+                GUI.FocusControl(_inputFieldName);
             }
         }
 
@@ -240,6 +237,8 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
 
         private void DrawSuggestions()
         {
+            _possibleCommands = CheatCommandExecutor.GetPossibleCommands(_userInput);
+            
             _scrollPositionSuggestions = GUI.BeginScrollView(_suggestionsRect, _scrollPositionSuggestions, _suggestionsContentRect, false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
 
             for (int i = 0; i < _possibleCommands.Length; i++)
@@ -264,11 +263,19 @@ namespace JoHaToolkit.UnityEngine.CheatConsole
                 if (GUI.Button(new Rect(0, _suggestionsContentRect.height - SuggestionHeight * (i + 1), buttonWidth, SuggestionHeight), "select"))
                 {
                     _userInput = baseCheatCommand.CommandName;
+
+                    if (GUI.GetNameOfFocusedControl().Equals(_inputFieldName))
+                    {
+                        TextEditor te =
+                            (TextEditor)GUIUtility.GetStateObject(typeof(TextEditor), GUIUtility.keyboardControl);
+
+                        te.cursorIndex = _userInput.Length;
+                        te.selectIndex = _userInput.Length;
+                    }
                 }
             }
 
             GUI.EndScrollView();
         }
     }
-
 }

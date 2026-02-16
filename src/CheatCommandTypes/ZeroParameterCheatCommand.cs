@@ -1,6 +1,6 @@
 using System;
 
-namespace JoHaToolkit.UnityEngine.CheatConsole
+namespace JoHaCheatConsole
 {
     public class ZeroParameterCheatCommand : BaseCheatCommand
     {

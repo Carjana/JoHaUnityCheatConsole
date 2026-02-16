@@ -1,6 +1,6 @@
 using System;
 
-namespace JoHaToolkit.UnityEngine.CheatConsole
+namespace JoHaCheatConsole
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class CheatCommandAttribute : Attribute
