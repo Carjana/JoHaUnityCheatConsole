@@ -1,5 +1,8 @@
 using System;
 using System.Text;
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,13 +33,56 @@ namespace JoHaCheatConsole
         }
 
         public static DebugConsole Instance { get; private set; }
+
+#if ODIN_INSPECTOR
+        [DisableInPlayMode]
+#endif
+        [SerializeField] private bool useInputAction;
         
+#if ODIN_INSPECTOR
+        [ShowIf(nameof(useInputAction))]
+#endif
         [SerializeField] private InputActionReference toggleConsoleInputAction;
+
+#if ODIN_INSPECTOR
+        [ShowIf(nameof(useInputAction))]
+#endif
         [SerializeField] private InputActionReference executeCommandInputAction;
+      
+#if ODIN_INSPECTOR
+        [HorizontalGroup("Key_1", Width = 0.75f, DisableAutomaticLabelWidth = true)]
+        [HideIf(nameof(useInputAction))]
+        [OnValueChanged(nameof(OnToggleConsoleKeyChanged))]
+#endif
+        [SerializeField] private Key toggleConsoleKey;
+      
+#if ODIN_INSPECTOR
+        [HorizontalGroup("Key_1", Width = 0.25f)]
+        [HideIf(nameof(useInputAction))]
+        [DisplayAsString, HideLabel]
+#endif
+        [SerializeField] private string qwertyKeyDisplayToggleConsoleKey;
+        
+#if ODIN_INSPECTOR
+        [HorizontalGroup("Key_2", Width = 0.75f, DisableAutomaticLabelWidth = true)]
+        [HideIf(nameof(useInputAction))]
+        [OnValueChanged(nameof(OnExecuteKeyChanged))]
+#endif  
+        [SerializeField] private Key executeCommandKey;
+        
+#if ODIN_INSPECTOR
+        [HorizontalGroup("Key_2", Width = 0.25f)]
+        [HideIf(nameof(useInputAction))]
+        [DisplayAsString, HideLabel]
+#endif
+        [SerializeField] private string qwertyKeyDisplayExecuteKey;
 
         [SerializeField] private bool catchConsoleLogs;
         [SerializeField] private int maxLogs;
 
+        private void OnToggleConsoleKeyChanged(Key key) => qwertyKeyDisplayToggleConsoleKey = $"(QWERTZ: {Keyboard.current[key].displayName})";
+        private void OnExecuteKeyChanged(Key key) => qwertyKeyDisplayExecuteKey = $"(QWERTZ: {Keyboard.current[key].displayName})";
+        
         [Header("Assembly Names: Optional. standard is \"Assembly-CSharp\"")]
         [SerializeField] private string[] assemblyNames = {"Assembly-CSharp"};
 
@@ -77,6 +123,7 @@ namespace JoHaCheatConsole
 
         private void Awake()
         {
+            
             if (Instance != null)
             {
                 Destroy(gameObject);
@@ -93,8 +140,11 @@ namespace JoHaCheatConsole
             _possibleCommands = Array.Empty<BaseCheatCommand>();
             RecalculateRects();
 
-            toggleConsoleInputAction.action.performed += _ => ToggleConsole();
-            executeCommandInputAction.action.performed += _ => HandleInput();
+            if (useInputAction)
+            {
+                toggleConsoleInputAction.action.performed += _ => ToggleConsole();
+                executeCommandInputAction.action.performed += _ => HandleInput();
+            }
 
             Application.logMessageReceived += HandleLog;
 
@@ -155,13 +205,23 @@ namespace JoHaCheatConsole
         private void ToggleConsole()
         {
             _isConsoleShown = !_isConsoleShown;
-            string displayName = toggleConsoleInputAction.action.activeControl.displayName;
+            
+            string displayName = useInputAction ? toggleConsoleInputAction.action.activeControl.displayName : Keyboard.current[toggleConsoleKey].displayName;
             if(_userInput.Length > 0 && _userInput.EndsWith(displayName, StringComparison.InvariantCultureIgnoreCase))
             {
                 _userInput = _userInput.Remove(_userInput.Length - displayName.Length, displayName.Length);
             }
         }
 
+        private void Update()
+        { // extra update method, because this runs once per frame, OnGUI maybe not
+            if (!useInputAction && Keyboard.current[toggleConsoleKey].wasPressedThisFrame)
+                ToggleConsole();
+            
+            if(!useInputAction && Keyboard.current[executeCommandKey].wasPressedThisFrame)
+                HandleInput();
+        }
+        
         private void OnGUI()
         {
             if (!_isConsoleShown)
@@ -221,7 +281,12 @@ namespace JoHaCheatConsole
                 _logs.Clear();
         }
 
-        private void HandleInput() => CheatCommandExecutor.Execute(_userInput);
+        private void HandleInput()
+        {
+            if (!_isConsoleShown)
+                return;
+            CheatCommandExecutor.Execute(_userInput);
+        }
 
         private void DrawSuggestionsArea()
         {
