@@ -12,9 +12,13 @@ namespace JoHaCheatConsole
         
         private static BaseCheatCommand[] _commandCache;
         private static string _lastCommand;
+        private static DebugConsoleUnitySceneAPI _sceneAPI;
 
-        public static void Init(string[] assembliesToSearch, bool searchAllAssemblies = false)
+        public static void Init(string[] assembliesToSearch, bool searchAllAssemblies = false, DebugConsoleUnitySceneAPI sceneAPI = null)
         {
+            _sceneAPI = sceneAPI;
+            if (!_sceneAPI)
+                Debug.LogWarning("No DebugConsoleUnitySceneAPI provided to CheatCommandExecutor! Some commands that require scene access might not work!");
             GenerateCheatCommandsList(assembliesToSearch, searchAllAssemblies);
             _commandCache = CheatCommands.Values.ToArray();
         }
@@ -33,11 +37,11 @@ namespace JoHaCheatConsole
                         if(!ReflectionHelper.TryGetCheatCommandAttribute(methodInfo, out CheatCommandAttribute attribute))
                             continue;
                         
-                        MethodInfoCheatCommand cheatCommand = ReflectionHelper.MethodInfoToCheatCommand(methodInfo, attribute);
+                        MethodInfoCheatCommand cheatCommand = ReflectionHelper.MethodInfoToCheatCommand(methodInfo, attribute, _sceneAPI);
                         if (CheatCommands.TryAdd(cheatCommand.CommandName, cheatCommand))
                             continue;
                         
-                        Debug.LogWarning($"{cheatCommand.CommandName} already exists in the cheat commands list! Check the command names! ({cheatCommand.MethodInfo.DeclaringType}.{cheatCommand.MethodInfo.Name})");
+                        Debug.LogWarning($"{cheatCommand.CommandName} already exists in the cheat commands list! Check the command names! ({cheatCommand.OwningMethodInfo.DeclaringType}.{cheatCommand.OwningMethodInfo.Name})");
                     }
                 }
             }

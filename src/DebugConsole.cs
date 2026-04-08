@@ -133,8 +133,10 @@ namespace JoHaCheatConsole
             DontDestroyOnLoad(this);
             Instance = this;
 
+            DebugConsoleUnitySceneAPI apiToScene = gameObject.AddComponent<DebugConsoleUnitySceneAPI>();
+            
             CheatCommandExecutor.CheatCommands.Add("help", new HelpCommand("help", "Print All possible Commands"));
-            CheatCommandExecutor.Init(assemblyNames, searchAllAssemblies);
+            CheatCommandExecutor.Init(assemblyNames, searchAllAssemblies, apiToScene);
             
             _logs = new CircularLinkedList<LogMessage>(maxLogs);
             _possibleCommands = Array.Empty<BaseCheatCommand>();
@@ -149,6 +151,11 @@ namespace JoHaCheatConsole
             Application.logMessageReceived += HandleLog;
 
             _scrollPositionLogs.y = _logsContentRect.height - _logsRect.height;
+        }
+
+        private void OnDestroy()
+        {
+            Application.logMessageReceived -= HandleLog;
         }
 
         private void RecalculateRects()

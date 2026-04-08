@@ -7,10 +7,10 @@ namespace JoHaCheatConsole
 {
     public static class ReflectionHelper
     {
-        public static MethodInfoCheatCommand MethodInfoToCheatCommand(MethodInfo info, CheatCommandAttribute attribute)
+        public static MethodInfoCheatCommand MethodInfoToCheatCommand(MethodInfo info, CheatCommandAttribute attribute, DebugConsoleUnitySceneAPI sceneAPI)
         {
             return new MethodInfoCheatCommand(attribute.CommandName ?? info.Name,
-                attribute.Description, info);
+                attribute.Description, info, sceneAPI);
         }
         
         public static bool TryGetCheatCommandAttribute(MethodInfo methodInfo, out CheatCommandAttribute attribute)

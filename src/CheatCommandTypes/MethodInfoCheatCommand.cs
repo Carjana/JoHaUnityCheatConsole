@@ -2,18 +2,22 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace JoHaCheatConsole
 {
     public class MethodInfoCheatCommand : BaseCheatCommand
     {
-        public MethodInfo MethodInfo { get; }
+        public MethodInfo OwningMethodInfo { get; }
         public ParameterInfo[] Parameters { get; }
 
-        public MethodInfoCheatCommand(string commandName, string description, MethodInfo methodInfo) : base(commandName, description)
+        private readonly DebugConsoleUnitySceneAPI _sceneAPI;
+
+        public MethodInfoCheatCommand(string commandName, string description, MethodInfo owningMethodInfo, DebugConsoleUnitySceneAPI sceneAPI) : base(commandName, description)
         {
-            MethodInfo = methodInfo;
-            Parameters = MethodInfo.GetParameters();
+            _sceneAPI = sceneAPI;
+            OwningMethodInfo = owningMethodInfo;
+            Parameters = OwningMethodInfo.GetParameters();
             ParameterTypes = Parameters.Select(parameter => parameter.ParameterType).ToArray();
             ParameterNames = Parameters.Select(parameter => parameter.Name).ToArray();
         }
@@ -41,8 +45,20 @@ namespace JoHaCheatConsole
                 parameters[index] = param ?? throw new ArgumentException($"Failed to convert parameter {index} of {CommandName} to {parameterType.Name}");
 
             }
+
+            object instanceToInvokeOn = null;
             
-            MethodInfo.Invoke(null, parameters);
+            if (!OwningMethodInfo.IsStatic)
+            {
+                if(!_sceneAPI)
+                    throw new NullReferenceException("No Interface to unity scene provided to method Info cheat command! Can't invoke non static method without scene access!");
+                Type type = OwningMethodInfo.ReflectedType;
+                instanceToInvokeOn = _sceneAPI.GetComponentFromUnity(type);
+                if(instanceToInvokeOn == null)
+                    Debug.LogWarning($"Failed to get instance of type {type} from unity scene");
+            }
+            
+            OwningMethodInfo.Invoke(instanceToInvokeOn, parameters);
         }
 
         public override bool IsValidParameters(string[] parameters)
