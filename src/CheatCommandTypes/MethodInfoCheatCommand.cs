@@ -55,7 +55,7 @@ namespace JoHaCheatConsole
                 Type type = OwningMethodInfo.ReflectedType;
                 instanceToInvokeOn = _sceneAPI.GetComponentFromUnity(type);
                 if(instanceToInvokeOn == null)
-                    Debug.LogWarning($"Failed to get instance of type {type} from unity scene");
+                    throw new NullReferenceException($"Failed to get instance of type {type} from unity scene");
             }
             
             OwningMethodInfo.Invoke(instanceToInvokeOn, parameters);
