@@ -135,7 +135,7 @@ namespace JoHaCheatConsole
 
             DebugConsoleUnitySceneAPI apiToScene = gameObject.AddComponent<DebugConsoleUnitySceneAPI>();
             
-            CheatCommandExecutor.CheatCommands.Add("help", new HelpCommand("help", "Print All possible Commands"));
+            CheatCommandExecutor.CheatCommands.TryAdd("help", new HelpCommand("help", "Print All possible Commands"));
             CheatCommandExecutor.Init(assemblyNames, searchAllAssemblies, apiToScene);
             
             _logs = new CircularLinkedList<LogMessage>(maxLogs);
